@@ -65,13 +65,15 @@ def io_operation_compile(io_operations):
     )
 
 
+ifilter_nonblanks = partial(ifilter, None)
+
+
 def loop_compile(expressions):
-    ifilter_nonblanks = partial(ifilter, None)
     nonempty_rows = ifilter_nonblanks(
         chain.from_iterable(
             imap(
                 methodcaller('split', '\n'),
-                expressions[0]
+                expressions
             )
         )
     )
@@ -116,7 +118,7 @@ def parser(M):
     start_bracket = Literal('[').suppress()
     end_bracket = Literal(']').suppress()
     expression = Forward()
-    loop = Group(start_bracket + expression + end_bracket).setParseAction(
+    loop = (start_bracket + expression + end_bracket).setParseAction(
         loop_compile
     )
 
@@ -132,17 +134,29 @@ def parser(M):
 
 
 def bf(program, M=1024):
-    header = "def _f(i):\n{}"
+    header_template = "def _f(i):\n{code}"
     compiled_program = parser(M=M).parseString(program)[0]
+
+    compiled_program_with_header = header_template.format(
+        code="".join(
+            imap(
+                "    {}\n".format,
+                ifilter_nonblanks(
+                    compiled_program.split('\n')
+                )
+            )
+        )
+    )
+    print(compiled_program_with_header)
 
     def _bf(input_stream=[]):
         input_stream = iter(input_stream)
         code = compile(compiled_program_with_header, '<compiled>', 'exec')
-        _f = None
         exec code in {}, locals()  # MAGIC: _f gets loaded into scope
 
         return _f(input_stream)
 
+    return _bf
 
 brainfuck = bf
 
