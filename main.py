@@ -3,6 +3,8 @@ from __future__ import print_function
 from itertools import imap, chain, ifilter
 from functools import partial
 from operator import methodcaller
+import string
+
 from collections import Counter
 
 from pyparsing import (
@@ -134,20 +136,39 @@ def parser(M):
 
 
 def bf(program, M=1024):
-    header_template = "def _f(i):\n{code}"
-    compiled_program = parser(M=M).parseString(program)[0]
+    alphabet = '+-><[].,'
+    all_characters = string.maketrans('', '')
+    cleaned_program = string.translate(
+        program,
+        None,
+        string.translate(
+            all_characters,
+            None,
+            alphabet
+        )
+    )
+
+    header_template = "def _f(i):\n{code}    if False:\n        yield 0"
+    compiled_program = parser(M=M).parseString(cleaned_program)[0]
+
+    ensure_generator = [
+        "if False:"
+        "    yield 0"
+    ]  # HACK the yield will never be reached, this is so that the degenerate program without output still gets interpreted as a generator by the python compiled and by this is always return a generator
 
     compiled_program_with_header = header_template.format(
         code="".join(
             imap(
                 "    {}\n".format,
-                ifilter_nonblanks(
-                    compiled_program.split('\n')
+                chain(
+                    ifilter_nonblanks(
+                        compiled_program.split('\n')
+                    ),
+                    ensure_generator
                 )
             )
         )
     )
-    print(compiled_program_with_header)
 
     def _bf(input_stream=[]):
         input_stream = iter(input_stream)
@@ -167,18 +188,18 @@ def test(program):
     print('-----------------------------------------')
 
 
-map(
-    test,
-    [
-        '[]'
-        '++++----',
-        '><<>><<>',
-        '>>[++---]',
-        '[-[++]+]',
-        '++[>>[-]..,]',
-        '++[-->>+++][+[+]+][+>-]',
-    ]
-)
+#map(
+#    test,
+#    [
+#        '[]'
+#        '++++----',
+#        '><<>><<>',
+#        '>>[++---]',
+#        '[-[++]+]',
+#        '++[>>[-]..,]',
+#        '++[-->>+++][+[+]+][+>-]',
+#    ]
+#)
 
 
 def main():
