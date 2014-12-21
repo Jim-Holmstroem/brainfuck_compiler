@@ -202,6 +202,13 @@ def test(program):
 #)
 
 
+add_text = ',>,[<+>-]<.'
+sum_to_first_zero_text = ',[[->+<],]>.'  # FIXME (fix the compiler not the code) result is empty if trailing 0 is missing
+fibonacci_text = '.>+.[[->+>+<<]<[->>+<<]>>>[-<<+>>]<.]'
+mul_text = ',>,[-<[->>+>+<<<]>>[-<<+>>]<]>>.'
+hello_text = '++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.'
+
+
 def main():
     pass
 
