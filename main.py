@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-from itertools import imap, chain
+from itertools import imap, chain, ifilter
+from functools import partial
 from operator import methodcaller
 from collections import Counter
 
@@ -35,12 +36,14 @@ class IOOperation(Operation):
 
 def memory_operation_compile(memory_operations):
     count = Counter(list(memory_operations))
+
     return "m[p]=(m[p]+({}))%256\n".format(count['+']-count['-'])
 
 
 def pointer_operation_compile(M):
     def _pointer_operation_compile(pointer_operations):
         count = Counter(list(pointer_operations))
+
         return "p=(p+({}))%{}\n".format(count['>']-count['<'], M)
 
     return _pointer_operation_compile
@@ -50,6 +53,7 @@ def io_operation_compile(io_operations):
     def translate(token):
         if token == '.':
             return "yield m[p]\n"
+
         else:
             return "m[p]=i.next()%256\n"
 
@@ -62,15 +66,23 @@ def io_operation_compile(io_operations):
 
 
 def loop_compile(expressions):
-    return "while m[p]:\n{}".format(
-        "".join(
+    ifilter_nonblanks = partial(ifilter, None)
+    nonempty_rows = ifilter_nonblanks(
+        chain.from_iterable(
             imap(
-                "    {}\n".format,
-                chain.from_iterable(
-                    imap(
-                        methodcaller('split', '\n'),
-                        expressions[0]
-                    )
+                methodcaller('split', '\n'),
+                expressions[0]
+            )
+        )
+    )
+    tab = partial(imap, "    {}\n".format)
+    pass_if_empty = lambda s: s if s else '    pass\n'
+
+    return "while m[p]:\n{}".format(
+        pass_if_empty(
+            "".join(
+                tab(
+                    nonempty_rows
                 )
             )
         )
@@ -84,13 +96,12 @@ def start_compile(M):
     return _start_compile
 
 
-def parser(M=1024):
-    plus = Literal('+')
-    minus = Literal('-')
-    right = Literal('>')
-    left = Literal('<')
-    write = Literal('.')
-    read = Literal(',')
+def parser(M):
+    """Brainfuck->Python
+    """
+    plus, minus = Literal('+'), Literal('-')
+    right, left = Literal('>'), Literal('<')
+    write, read = Literal('.'), Literal(',')
 
     memory_operation = OneOrMore(plus ^ minus).setParseAction(
         memory_operation_compile
@@ -120,15 +131,17 @@ def parser(M=1024):
     return program
 
 
-def bf(program):
-    precompiled = None
+def bf(program, M=1024):
+    header = "def _f(i):\n{}"
+    compiled_program = parser(M=M).parseString(program)[0]
 
     def _bf(input_stream=[]):
         input_stream = iter(input_stream)
-        code = compile(precompiled, '<compiled>', 'eval')
-        evaluated_code = eval(code)
+        code = compile(compiled_program_with_header, '<compiled>', 'exec')
+        _f = None
+        exec code in {}, locals()  # MAGIC: _f gets loaded into scope
 
-        return evaluated_code
+        return _f(input_stream)
 
 
 brainfuck = bf
@@ -136,13 +149,14 @@ brainfuck = bf
 
 def test(program):
     print(program)
-    print(parser().parseString(program).asList()[0])
+    print(parser(1024).parseString(program)[0])
     print('-----------------------------------------')
 
 
 map(
     test,
     [
+        '[]'
         '++++----',
         '><<>><<>',
         '>>[++---]',
