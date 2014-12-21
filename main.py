@@ -148,11 +148,11 @@ def bf(program, M=1024):
         )
     )
 
-    header_template = "def _f(i):\n{code}    if False:\n        yield 0"
+    header_template = "def _f(i):\n{code}"
     compiled_program = parser(M=M).parseString(cleaned_program)[0]
 
     ensure_generator = [
-        "if False:"
+        "if False:",
         "    yield 0"
     ]  # HACK the yield will never be reached, this is so that the degenerate program without output still gets interpreted as a generator by the python compiled and by this is always return a generator
 
@@ -169,7 +169,7 @@ def bf(program, M=1024):
             )
         )
     )
-
+    print(compiled_program_with_header)
     def _bf(input_stream=[]):
         input_stream = iter(input_stream)
         code = compile(compiled_program_with_header, '<compiled>', 'exec')
@@ -207,6 +207,11 @@ sum_to_first_zero_text = ',[[->+<],]>.'  # FIXME (fix the compiler not the code)
 fibonacci_text = '.>+.[[->+>+<<]<[->>+<<]>>>[-<<+>>]<.]'
 mul_text = ',>,[-<[->>+>+<<<]>>[-<<+>>]<]>>.'
 hello_text = '++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.'
+sort_text = '>>,[>>,]<<[[-<+<]>[>[>>]<[.[-]<[[>>+<<-]<]>>]>]<<]'  # NOTE zero terminated sort, example input [3,1,3,2,0]
+copy_text = ',[.[-],]'
+reverse_text = '>,[>,]<[.<]'
+render_brainfuck_text = '+++++[>+++++++++<-],[[>--.++>+<<-]>+.->[<.>-]<<,]'  # NOTE outputs brainfuck that prints the input
+brainfuck_interpreter_text = '>>>+[[-]>>[-]++>+>+++++++[<++++>>++<-]++>>+>+>+++++[>++>++++++<<-]+>>>,<++[[>[->>]<[>>]<<-]<[<]<+>>[>]>[<+>-[[<+>-]>]<[[[-]<]++<-[<+++++++++>[<->-]>>]>>]]<<]<]<[[<]>[[>]>>[>>]+[<<]<[<]<+>>-]>[>]+[->>]<<<<[[<<]<[<]+<<[+>+<<-[>-->+<<-[>+<[>>+<<-]]]>[<+>-]<]++>>-->[>]>>[>>]]<<[>>+<[[<]<]>[[<<]<[<]+[-<+>>-[<<+>++>-[<->[<<+>>-]]]<[>+<-]>]>[>]>]>[>>]>>]<<[>>+>>+>>]<<[->>>>>>>>]<<[>>>>>>>>]<<[>->>>>>]<<[>,>>>]<<[>+>]<<[+<<]<]' # NOTE [input a brainfuck program and its input, separated by an exclamation point.. http://www.hevanet.com/cristofd/brainfuck/dbfi.b
 
 
 def main():
