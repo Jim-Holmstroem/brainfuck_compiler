@@ -107,13 +107,13 @@ def parser(M):
     right, left = Literal('>'), Literal('<')
     write, read = Literal('.'), Literal(',')
 
-    memory_operation = OneOrMore(plus ^ minus).setParseAction(
+    memory_operation = OneOrMore(plus | minus).setParseAction(
         memory_operation_compile
     )
-    pointer_operation = OneOrMore(right ^ left).setParseAction(
+    pointer_operation = OneOrMore(right | left).setParseAction(
         pointer_operation_compile(M=M)
     )
-    io_operation = OneOrMore(write ^ read).setParseAction(
+    io_operation = OneOrMore(write | read).setParseAction(
         io_operation_compile
     )
 
@@ -127,7 +127,7 @@ def parser(M):
     start = Empty().setParseAction(start_compile(M=M))
 
     expression << ZeroOrMore(
-        memory_operation ^ pointer_operation ^ io_operation ^ loop
+        memory_operation | pointer_operation | io_operation | loop
     )
 
     program = (start + expression).setParseAction(''.join)
@@ -174,6 +174,8 @@ def bf(program, M=1024):
         input_stream = iter(input_stream)
         code = compile(compiled_program_with_header, '<compiled>', 'exec')
         exec code in {}, locals()  # MAGIC: _f gets loaded into scope
+        # TODO this could be done via types.LambdaType(...,
+        # code=types.CodeType(codestring='jsjfjdksf', nlocals=4, ...))
 
         return _f(input_stream)
 
